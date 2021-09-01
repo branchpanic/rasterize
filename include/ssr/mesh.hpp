@@ -5,7 +5,7 @@
 #ifndef SSR_MESH_H_
 #define SSR_MESH_H_
 
-#include <istream>
+#include <iostream>
 #include <vector>
 
 #include "ssr/math.hpp"
@@ -16,7 +16,9 @@ namespace ssr {
         std::vector<int3> m_indices{};
 
         static ssr::mesh make_cube(const float size = 1);
-        static bool try_load_obj(std::istream& text, ssr::mesh& out);
+        static ssr::mesh load_obj(std::istream& text);
+
+        void write_obj(std::ostream& out);
     };
 } // namespace ssr
 

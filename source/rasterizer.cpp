@@ -24,16 +24,12 @@ const void rasterizer::render_pixmap(std::ostream& color_ppm, std::ostream& dept
     image_buffer.resize(m_resolution.x, std::vector<float3>(m_resolution.y, {0, 0, 0}));
     depth_buffer.resize(m_resolution.x, std::vector<float>(m_resolution.y, m_camera.m_clip_far));
 
-    std::random_device rd;
-    std::default_random_engine eng(rd());
-    std::uniform_real_distribution<float> distr(0.f, 1.f);
-
     for (const auto& object : m_objects) {
         const float4x4 mvp = mul(m_camera.projection_matrix(m_resolution), m_camera.m_view, object.m_transform);
 
         const auto mesh = object.m_mesh;
         for (auto i = 0; i < mesh->m_indices.size(); ++i) {
-            const float3 color = {distr(eng), distr(eng), distr(eng)};
+            const float3 color = {1., 1., 1.};
 
             int3 triangle = mesh->m_indices[i];
 
