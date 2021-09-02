@@ -11,10 +11,12 @@
 #include "ssr/mesh.hpp"
 
 namespace ssr {
+
     struct object {
         std::shared_ptr<mesh> m_mesh{nullptr};
         float4x4 m_transform{identity};
     };
+
 } // namespace ssr
 
 #endif

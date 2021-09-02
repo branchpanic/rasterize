@@ -9,12 +9,32 @@
 
 using namespace ssr;
 
+// Pineda edge function - determine if point c lies on the right or left of the line formed by a and b
+// >0 when on the right, <0 when on the left
+// Line direction is a -> b, so triangles should be wound clockwise
+// Divide by area to get barycentric coordinates
+// https://www.scratchapixel.com/lessons/3d-basic-rendering/rasterization-practical-implementation/rasterization-stage
 float edge_func(const float3& a, const float3& b, const float3& c) {
     return (c.x - a.x) * (b.y - a.y) - (c.y - a.y) * (b.x - a.x);
 }
 
 float3 ndc_to_raster(const float4& ndc, const int2& resolution) {
     return {(ndc.x + 1) / 2 * resolution.x, (1 - ndc.y) / 2 * resolution.y, -ndc.z};
+}
+
+struct bounds {
+    int2 min;
+    int2 max;
+};
+
+// Compute bounds of triangle in raster space
+bounds triangle_bounds(const float3& v1, const float3& v2, const float3& v3, const int2& resolution) {
+    auto x_bounds = std::minmax({v1.x, v2.x, v3.x});
+    auto y_bounds = std::minmax({v1.y, v2.y, v3.y});
+    return bounds{
+        .min = {std::max(0.f, x_bounds.first), std::max(0.f, y_bounds.first)},
+        .max = {std::min(resolution.x - 1.f, x_bounds.second), std::max(resolution.y - 1.f, y_bounds.second)},
+    };
 }
 
 const void rasterizer::render_pixmap(std::ostream& color_ppm, std::ostream& depth_ppm) {
@@ -49,15 +69,17 @@ const void rasterizer::render_pixmap(std::ostream& color_ppm, std::ostream& dept
             auto v0_raster = ndc_to_raster(v0_ndc, m_resolution);
             auto v1_raster = ndc_to_raster(v1_ndc, m_resolution);
             auto v2_raster = ndc_to_raster(v2_ndc, m_resolution);
+
+            // 1/z used for interpolation later
             v0_raster.z /= 1;
             v1_raster.z /= 1;
             v2_raster.z /= 1;
 
             auto area = edge_func(v0_raster, v1_raster, v2_raster);
+            auto bounds = triangle_bounds(v0_raster, v1_raster, v2_raster, m_resolution);
 
-            // TODO: Use 2d bounds of triangle as extents
-            for (auto x = 0; x < m_resolution.x; x++) {
-                for (auto y = 0; y < m_resolution.y; y++) {
+            for (auto x = bounds.min.x; x <= bounds.max.x; x++) {
+                for (auto y = bounds.min.y; y <= bounds.max.y; y++) {
                     float3 sample = {x + .5, y + .5, 0};
 
                     auto w0 = edge_func(v1_raster, v2_raster, sample);
@@ -67,13 +89,13 @@ const void rasterizer::render_pixmap(std::ostream& color_ppm, std::ostream& dept
                     if (w0 < 0 || w1 < 0 || w2 < 0)
                         continue;
 
-                    // TODO: some kind of normalization? - review
                     w0 /= area;
                     w1 /= area;
                     w2 /= area;
 
-                    auto reciprocal_z = v0_raster.z * w0 + v1_raster.z * w1 + v2_raster.z * w2;
-                    auto z            = 1.0f / reciprocal_z;
+                    // Interpolate z coordinate on the triangle surface at this pixel
+                    // Note that v[0-2]_raster.z is reciprocal
+                    auto z = 1.0f / (v0_raster.z * w0 + v1_raster.z * w1 + v2_raster.z * w2);
 
                     if (z >= depth_buffer[x][y])
                         continue;

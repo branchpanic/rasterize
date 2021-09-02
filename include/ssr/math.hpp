@@ -19,7 +19,7 @@ namespace ssr {
     constexpr long double operator"" _deg(const long double x) {
         return x * ssr::pi / 180.0f;
     }
-
+    
 } // namespace ssr
 
 #endif

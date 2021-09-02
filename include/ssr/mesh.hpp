@@ -11,6 +11,7 @@
 #include "ssr/math.hpp"
 
 namespace ssr {
+
     struct mesh {
         std::vector<float3> m_vertices{};
         std::vector<int3> m_indices{};
@@ -20,6 +21,7 @@ namespace ssr {
 
         void write_obj(std::ostream& out);
     };
+    
 } // namespace ssr
 
 #endif
