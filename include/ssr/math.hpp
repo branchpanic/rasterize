@@ -7,19 +7,21 @@
 
 #include <linalg.h>
 
-namespace ssr {
+namespace ssr
+{
 
-    constexpr double pi = 3.14159265358979323846;
+constexpr double pi = 3.14159265358979323846;
 
-    // We use linalg types almost everywhere, so add them to our project namespace
-    using namespace linalg;
-    using namespace linalg::aliases;
+// We use linalg types almost everywhere, so add them to our project namespace
+using namespace linalg;
+using namespace linalg::aliases;
 
-    // Degree literal (converts to radians, our conventional angle format)
-    constexpr long double operator"" _deg(const long double x) {
-        return x * ssr::pi / 180.0f;
-    }
-    
+// Degree literal (converts to radians, our conventional angle format)
+constexpr long double operator"" _deg(const long double x)
+{
+    return x * ssr::pi / 180.0f;
+}
+
 } // namespace ssr
 
 #endif

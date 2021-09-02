@@ -14,21 +14,25 @@ using namespace ssr;
 // Line direction is a -> b, so triangles should be wound clockwise
 // Divide by area to get barycentric coordinates
 // https://www.scratchapixel.com/lessons/3d-basic-rendering/rasterization-practical-implementation/rasterization-stage
-float edge_func(const float3& a, const float3& b, const float3& c) {
+float edge_func(const float3 &a, const float3 &b, const float3 &c)
+{
     return (c.x - a.x) * (b.y - a.y) - (c.y - a.y) * (b.x - a.x);
 }
 
-float3 ndc_to_raster(const float4& ndc, const int2& resolution) {
+float3 ndc_to_raster(const float4 &ndc, const int2 &resolution)
+{
     return {(ndc.x + 1) / 2 * resolution.x, (1 - ndc.y) / 2 * resolution.y, -ndc.z};
 }
 
-struct bounds {
+struct bounds
+{
     int2 min;
     int2 max;
 };
 
 // Compute bounds of triangle in raster space
-bounds triangle_bounds(const float3& v1, const float3& v2, const float3& v3, const int2& resolution) {
+bounds triangle_bounds(const float3 &v1, const float3 &v2, const float3 &v3, const int2 &resolution)
+{
     auto x_bounds = std::minmax({v1.x, v2.x, v3.x});
     auto y_bounds = std::minmax({v1.y, v2.y, v3.y});
     return bounds{
@@ -37,18 +41,21 @@ bounds triangle_bounds(const float3& v1, const float3& v2, const float3& v3, con
     };
 }
 
-const void rasterizer::render_pixmap(std::ostream& color_ppm, std::ostream& depth_ppm) {
+const void rasterizer::render_pixmap(std::ostream &color_ppm, std::ostream &depth_ppm)
+{
     std::vector<std::vector<float3>> image_buffer;
     std::vector<std::vector<float>> depth_buffer;
 
     image_buffer.resize(m_resolution.x, std::vector<float3>(m_resolution.y, {0, 0, 0}));
     depth_buffer.resize(m_resolution.x, std::vector<float>(m_resolution.y, m_camera.m_clip_far));
 
-    for (const auto& object : m_objects) {
+    for (const auto &object : m_objects)
+    {
         const float4x4 mvp = mul(m_camera.projection_matrix(m_resolution), m_camera.m_view, object.m_transform);
 
         const auto mesh = object.m_mesh;
-        for (auto i = 0; i < mesh->m_indices.size(); ++i) {
+        for (auto i = 0; i < mesh->m_indices.size(); ++i)
+        {
             const float3 color = {1., 1., 1.};
 
             int3 triangle = mesh->m_indices[i];
@@ -78,8 +85,10 @@ const void rasterizer::render_pixmap(std::ostream& color_ppm, std::ostream& dept
             auto area = edge_func(v0_raster, v1_raster, v2_raster);
             auto bounds = triangle_bounds(v0_raster, v1_raster, v2_raster, m_resolution);
 
-            for (auto x = bounds.min.x; x <= bounds.max.x; x++) {
-                for (auto y = bounds.min.y; y <= bounds.max.y; y++) {
+            for (auto x = bounds.min.x; x <= bounds.max.x; x++)
+            {
+                for (auto y = bounds.min.y; y <= bounds.max.y; y++)
+                {
                     float3 sample = {x + .5, y + .5, 0};
 
                     auto w0 = edge_func(v1_raster, v2_raster, sample);
@@ -110,8 +119,10 @@ const void rasterizer::render_pixmap(std::ostream& color_ppm, std::ostream& dept
     color_ppm << "P3\n";
     color_ppm << m_resolution.x << " " << m_resolution.y << "\n255\n";
 
-    for (auto y = 0; y < m_resolution.y; y++) {
-        for (auto x = 0; x < m_resolution.x; x++) {
+    for (auto y = 0; y < m_resolution.y; y++)
+    {
+        for (auto x = 0; x < m_resolution.x; x++)
+        {
             auto color = image_buffer[x][y];
             // TODO: use buffer instead of stream operations
             color_ppm << int(255 * color[0]) << " " << int(255 * color[1]) << " " << int(255 * color[2]) << "\n";
@@ -121,8 +132,10 @@ const void rasterizer::render_pixmap(std::ostream& color_ppm, std::ostream& dept
     depth_ppm << "P3\n";
     depth_ppm << m_resolution.x << " " << m_resolution.y << "\n255\n";
 
-    for (auto y = 0; y < m_resolution.y; y++) {
-        for (auto x = 0; x < m_resolution.x; x++) {
+    for (auto y = 0; y < m_resolution.y; y++)
+    {
+        for (auto x = 0; x < m_resolution.x; x++)
+        {
             auto depth = depth_buffer[x][y] / m_camera.m_clip_far;
             // TODO: use buffer instead of stream operations
             depth_ppm << int(255 * depth) << " " << int(255 * depth) << " " << int(255 * depth) << "\n";
