@@ -36,10 +36,9 @@ int main()
 
     const auto unit_cube = mesh::make_cube(.5f);
 
-    scene scene{camera::look_at({0, 0, 1.5f}, {0, 0, 0}, {0, 1, 0}, 90.0_deg),
-                std::vector<object>{
-                    object{cube_sphere, float3{0.f}, float4{0.f, 0.f, 0.f, 1.f}},
-                }};
+    scene scene{camera::look_at({.2f, .2f, 2.f}, {0, 0, 0}, {0, 1, 0}, 60.0_deg), std::vector<object>{
+                                                                                      object{suzanne},
+                                                                                  }};
 
     rasterizer rasterizer(int2{800, 600}, scene, float3{0.f});
 

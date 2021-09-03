@@ -71,10 +71,6 @@ void rasterizer::render_pixmap(std::ostream &color_ppm, std::ostream &depth_ppm)
             float4 v1_ndc{v1, 1};
             float4 v2_ndc{v2, 1};
 
-            float3 v0_view = mul(mv, v0_ndc).xyz();
-            float3 v1_view = mul(mv, v1_ndc).xyz();
-            float3 v2_view = mul(mv, v2_ndc).xyz();
-
             // Local space -> NDC space (+ perspective divide)
             v0_ndc = mul(mvp, v0_ndc);
             v1_ndc = mul(mvp, v1_ndc);
@@ -121,10 +117,21 @@ void rasterizer::render_pixmap(std::ostream &color_ppm, std::ostream &depth_ppm)
                     if (z >= depth_buffer[x][y])
                         continue;
 
-                    float3 view_normal = normalize(cross((v2_view - v0_view), (v1_view - v0_view)));
+                    float3 world_normal = normalize(cross((v1 - v0), (v2 - v0)));
+
+                    // Understanding note - this is direction of *surface to light source*, not *light source to
+                    // surface*. That's why it's <0, 1, 0> and not <0, -1, 0>
+                    // https://en.wikipedia.org/wiki/Lambertian_reflectance
+                    float3 light_dir = normalize(float3{.5f, 1, .5f});
+                    float lambert = max(0, dot(world_normal, light_dir));
+
+                    // Half lambert to improve visibility
+                    // https://developer.valvesoftware.com/wiki/Half_Lambert
+                    lambert = 0.5f * lambert + 0.5f;
+                    lambert *= lambert;
 
                     depth_buffer[x][y] = z;
-                    image_buffer[x][y] = 1.0f + 0.5f * normalize(view_normal);
+                    image_buffer[x][y] = {lambert, lambert, lambert};
                 }
             }
         }
