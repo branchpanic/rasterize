@@ -36,9 +36,10 @@ bounds triangle_bounds(const float3 &v1, const float3 &v2, const float3 &v3, con
 {
     auto x_bounds = std::minmax({v1.x, v2.x, v3.x});
     auto y_bounds = std::minmax({v1.y, v2.y, v3.y});
+
     return bounds{
-        .min = {std::max(0.f, x_bounds.first), std::max(0.f, y_bounds.first)},
-        .max = {std::min(resolution.x - 1.f, x_bounds.second), std::max(resolution.y - 1.f, y_bounds.second)},
+        .min = {std::max(0, (int)x_bounds.first), std::max(0, (int)y_bounds.first)},
+        .max = {std::min(resolution.x - 1, (int)x_bounds.second), std::min(resolution.y - 1, (int)y_bounds.second)},
     };
 }
 
