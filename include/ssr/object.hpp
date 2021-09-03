@@ -16,7 +16,11 @@ namespace ssr
 struct object
 {
     std::shared_ptr<mesh> m_mesh{nullptr};
-    float4x4 m_transform{identity};
+    float3 m_position{0, 0, 0};
+    float4 m_rotation{0, 0, 0, 1};
+    float3 m_scale{1, 1, 1};
+
+    const float4x4 transform() const;
 };
 
 } // namespace ssr

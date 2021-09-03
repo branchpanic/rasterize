@@ -1,3 +1,7 @@
+//
+// rasterizer.hpp: Main rasterizer object
+//
+
 #ifndef SSR_RASTERIZER_H_
 #define SSR_RASTERIZER_H_
 
@@ -8,22 +12,21 @@
 #include "ssr/math.hpp"
 #include "ssr/mesh.hpp"
 #include "ssr/object.hpp"
+#include "ssr/scene.hpp"
 
 namespace ssr
 {
 
 class rasterizer
 {
-  private:
-    std::vector<object> m_objects;
-
   public:
     int2 m_resolution;
-    camera m_camera;
+    scene m_scene;
+    float3 m_background_color;
 
   public:
-    rasterizer(int2 resolution, camera camera, std::vector<object> objects = {})
-        : m_resolution(resolution), m_camera(camera), m_objects(objects)
+    rasterizer(int2 resolution, scene scene, float3 background_color = {0, 0, 0})
+        : m_resolution(resolution), m_scene(scene), m_background_color(background_color)
     {
     }
 

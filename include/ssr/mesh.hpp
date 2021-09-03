@@ -18,10 +18,21 @@ struct mesh
     std::vector<float3> m_vertices{};
     std::vector<int3> m_indices{};
 
-    static ssr::mesh make_cube(const float size = 1);
-    static ssr::mesh load_obj(std::istream &text);
+    mesh(std::vector<float3> vertices, std::vector<int3> indices) : m_vertices(vertices), m_indices(indices)
+    {
+    }
 
     void write_obj(std::ostream &out);
+
+    static std::shared_ptr<mesh> make_cube(const float size = 1);
+
+    // TODO: WARNING: no error checking in this function
+    // Vertices must not contain w component and faces need exactly 3 vertices
+    // Unknown commands will be ignored
+    //
+    // Perhaps we can switch to assimp or gltf or something, because improving this parser is out of scope for this
+    // project
+    static std::shared_ptr<mesh> load_obj(std::istream &text);
 };
 
 } // namespace ssr

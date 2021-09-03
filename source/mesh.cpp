@@ -1,46 +1,45 @@
 #include "ssr/mesh.hpp"
 
+#include <memory>
 #include <string>
+#include <vector>
 
 #include "ssr/math.hpp"
 
 using namespace ssr;
 
-mesh mesh::make_cube(const float size)
+std::shared_ptr<mesh> mesh::make_cube(const float size)
 {
     auto extent = size * 0.5f;
-
-    return mesh{.m_vertices =
-                    {
-                        {extent, -extent, -extent},
-                        {-extent, -extent, -extent},
-                        {extent, -extent, extent},
-                        {-extent, -extent, extent},
-                        {-extent, extent, extent},
-                        {extent, extent, extent},
-                        {-extent, extent, -extent},
-                        {extent, extent, -extent},
-                    },
-                .m_indices = {
-                    {0, 2, 1},
-                    {2, 3, 1},
-                    {4, 3, 5},
-                    {5, 3, 2},
-                    {4, 6, 3},
-                    {3, 6, 1},
-                    {2, 0, 5},
-                    {5, 0, 7},
-                    {1, 6, 0},
-                    {0, 6, 7},
-                    {6, 4, 7},
-                    {7, 4, 5},
-                }};
+    return std::make_shared<mesh>(
+        std::vector<float3>{
+            {extent, -extent, -extent},
+            {-extent, -extent, -extent},
+            {extent, -extent, extent},
+            {-extent, -extent, extent},
+            {-extent, extent, extent},
+            {extent, extent, extent},
+            {-extent, extent, -extent},
+            {extent, extent, -extent},
+        },
+        std::vector<int3>{
+            {0, 2, 1},
+            {2, 3, 1},
+            {4, 3, 5},
+            {5, 3, 2},
+            {4, 6, 3},
+            {3, 6, 1},
+            {2, 0, 5},
+            {5, 0, 7},
+            {1, 6, 0},
+            {0, 6, 7},
+            {6, 4, 7},
+            {7, 4, 5},
+        });
 }
 
-mesh mesh::load_obj(std::istream &source)
+std::shared_ptr<mesh> mesh::load_obj(std::istream &source)
 {
-    mesh mesh;
-
     std::vector<float3> vertices;
     std::vector<int3> indices;
 
@@ -53,7 +52,7 @@ mesh mesh::load_obj(std::istream &source)
 
             if (!(source >> v.x) || !(source >> v.y) || !(source >> v.z))
             {
-                return mesh;
+                return nullptr;
             }
 
             vertices.push_back(v);
@@ -65,19 +64,14 @@ mesh mesh::load_obj(std::istream &source)
 
             if (!(source >> i0) || !(source >> i1) || !(source >> i2))
             {
-                return mesh;
+                return nullptr;
             }
 
             indices.push_back({std::stoi(i0, nullptr) - 1, std::stoi(i1, nullptr) - 1, std::stoi(i2, nullptr) - 1});
         }
     }
 
-    mesh.m_vertices = vertices;
-    mesh.m_indices = indices;
-
-    std::cout << mesh.m_vertices.size() << std::endl;
-
-    return mesh;
+    return std::make_shared<mesh>(vertices, indices);
 }
 
 void mesh::write_obj(std::ostream &out)

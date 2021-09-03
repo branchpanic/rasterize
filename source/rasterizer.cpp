@@ -5,6 +5,7 @@
 #include <iostream>
 #include <random>
 
+#include "linalg.h"
 #include "ssr/math.hpp"
 
 using namespace ssr;
@@ -46,12 +47,16 @@ const void rasterizer::render_pixmap(std::ostream &color_ppm, std::ostream &dept
     std::vector<std::vector<float3>> image_buffer;
     std::vector<std::vector<float>> depth_buffer;
 
-    image_buffer.resize(m_resolution.x, std::vector<float3>(m_resolution.y, {0, 0, 0}));
-    depth_buffer.resize(m_resolution.x, std::vector<float>(m_resolution.y, m_camera.m_clip_far));
+    auto objects = m_scene.m_objects;
+    auto camera = m_scene.m_camera;
 
-    for (const auto &object : m_objects)
+    image_buffer.resize(m_resolution.x, std::vector<float3>(m_resolution.y, m_background_color));
+    depth_buffer.resize(m_resolution.x, std::vector<float>(m_resolution.y, camera.m_clip_far));
+
+    for (const auto &object : objects)
     {
-        const float4x4 mvp = mul(m_camera.projection_matrix(m_resolution), m_camera.m_view, object.m_transform);
+        const float4x4 mv = mul(camera.m_view, object.transform());
+        const float4x4 mvp = mul(camera.projection_matrix(m_resolution), camera.m_view, object.transform());
 
         const auto mesh = object.m_mesh;
         for (auto i = 0; i < mesh->m_indices.size(); ++i)
@@ -116,6 +121,8 @@ const void rasterizer::render_pixmap(std::ostream &color_ppm, std::ostream &dept
         }
     }
 
+    // TODO: Don't use stream operations to write buffer contents (slow)
+
     color_ppm << "P3\n";
     color_ppm << m_resolution.x << " " << m_resolution.y << "\n255\n";
 
@@ -124,7 +131,6 @@ const void rasterizer::render_pixmap(std::ostream &color_ppm, std::ostream &dept
         for (auto x = 0; x < m_resolution.x; x++)
         {
             auto color = image_buffer[x][y];
-            // TODO: use buffer instead of stream operations
             color_ppm << int(255 * color[0]) << " " << int(255 * color[1]) << " " << int(255 * color[2]) << "\n";
         }
     }
@@ -136,8 +142,7 @@ const void rasterizer::render_pixmap(std::ostream &color_ppm, std::ostream &dept
     {
         for (auto x = 0; x < m_resolution.x; x++)
         {
-            auto depth = depth_buffer[x][y] / m_camera.m_clip_far;
-            // TODO: use buffer instead of stream operations
+            auto depth = depth_buffer[x][y] / camera.m_clip_far;
             depth_ppm << int(255 * depth) << " " << int(255 * depth) << " " << int(255 * depth) << "\n";
         }
     }
