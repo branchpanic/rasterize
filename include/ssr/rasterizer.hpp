@@ -30,7 +30,7 @@ class rasterizer
     {
     }
 
-    const void render_pixmap(std::ostream &, std::ostream &);
+    void render_pixmap(std::ostream &, std::ostream &) const;
 };
 
 } // namespace ssr

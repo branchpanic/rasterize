@@ -43,32 +43,37 @@ bounds triangle_bounds(const float3 &v1, const float3 &v2, const float3 &v3, con
     };
 }
 
-const void rasterizer::render_pixmap(std::ostream &color_ppm, std::ostream &depth_ppm)
+void rasterizer::render_pixmap(std::ostream &color_ppm, std::ostream &depth_ppm) const
 {
     std::vector<std::vector<float3>> image_buffer;
     std::vector<std::vector<float>> depth_buffer;
 
-    auto objects = m_scene.m_objects;
     auto camera = m_scene.m_camera;
 
     image_buffer.resize(m_resolution.x, std::vector<float3>(m_resolution.y, m_background_color));
     depth_buffer.resize(m_resolution.x, std::vector<float>(m_resolution.y, camera.m_clip_far));
 
-    for (const auto &object : objects)
+    for (const auto &object : m_scene.m_objects)
     {
         const float4x4 mv = mul(camera.m_view, object.transform());
-        const float4x4 mvp = mul(camera.projection_matrix(m_resolution), camera.m_view, object.transform());
+        const float4x4 mvp = mul(camera.projection_matrix(m_resolution), mv);
 
         const auto mesh = object.m_mesh;
-        for (auto i = 0; i < mesh->m_indices.size(); ++i)
+        for (const auto &triangle : mesh->m_indices)
         {
             const float3 color = {1., 1., 1.};
 
-            int3 triangle = mesh->m_indices[i];
+            float3 v0 = mesh->m_vertices[triangle[0]];
+            float3 v1 = mesh->m_vertices[triangle[1]];
+            float3 v2 = mesh->m_vertices[triangle[2]];
 
-            float4 v0_ndc{mesh->m_vertices[triangle[0]], 1};
-            float4 v1_ndc{mesh->m_vertices[triangle[1]], 1};
-            float4 v2_ndc{mesh->m_vertices[triangle[2]], 1};
+            float4 v0_ndc{v0, 1};
+            float4 v1_ndc{v1, 1};
+            float4 v2_ndc{v2, 1};
+
+            float3 v0_view = mul(mv, v0_ndc).xyz();
+            float3 v1_view = mul(mv, v1_ndc).xyz();
+            float3 v2_view = mul(mv, v2_ndc).xyz();
 
             // Local space -> NDC space (+ perspective divide)
             v0_ndc = mul(mvp, v0_ndc);
@@ -95,6 +100,7 @@ const void rasterizer::render_pixmap(std::ostream &color_ppm, std::ostream &dept
             {
                 for (auto y = bounds.min.y; y <= bounds.max.y; y++)
                 {
+                    // TODO: subpixel AA
                     float3 sample = {x + .5, y + .5, 0};
 
                     auto w0 = edge_func(v1_raster, v2_raster, sample);
@@ -115,36 +121,45 @@ const void rasterizer::render_pixmap(std::ostream &color_ppm, std::ostream &dept
                     if (z >= depth_buffer[x][y])
                         continue;
 
+                    float3 view_normal = normalize(cross((v2_view - v0_view), (v1_view - v0_view)));
+
                     depth_buffer[x][y] = z;
-                    image_buffer[x][y] = color;
+                    image_buffer[x][y] = 1.0f + 0.5f * normalize(view_normal);
                 }
             }
         }
     }
 
-    // TODO: Don't use stream operations to write buffer contents (slow)
-
-    color_ppm << "P3\n";
-    color_ppm << m_resolution.x << " " << m_resolution.y << "\n255\n";
-
-    for (auto y = 0; y < m_resolution.y; y++)
+    // TODO: Need another buffer or can we just write the final char values directly during rasterization?
+    // For now let's use an extra buffer, we *might* need to read from the image buffer at some point
+    std::vector<char> image_buffer_ppm(m_resolution.x * m_resolution.y * 3);
+    for (auto x = 0; x < m_resolution.x; x++)
     {
-        for (auto x = 0; x < m_resolution.x; x++)
+        for (auto y = 0; y < m_resolution.y; y++)
         {
-            auto color = image_buffer[x][y];
-            color_ppm << int(255 * color[0]) << " " << int(255 * color[1]) << " " << int(255 * color[2]) << "\n";
+            auto idx = (y * m_resolution.x + x) * 3;
+            image_buffer_ppm[idx] = (unsigned char)(255 * image_buffer[x][y][0]);
+            image_buffer_ppm[idx + 1] = (unsigned char)(255 * image_buffer[x][y][1]);
+            image_buffer_ppm[idx + 2] = (unsigned char)(255 * image_buffer[x][y][2]);
         }
     }
 
-    depth_ppm << "P3\n";
-    depth_ppm << m_resolution.x << " " << m_resolution.y << "\n255\n";
+    color_ppm << "P6\n";
+    color_ppm << m_resolution.x << " " << m_resolution.y << "\n255 ";
+    color_ppm.write(image_buffer_ppm.data(), image_buffer_ppm.size());
 
-    for (auto y = 0; y < m_resolution.y; y++)
+    std::vector<char> depth_buffer_ppm(m_resolution.x * m_resolution.y * 3);
+    for (auto x = 0; x < m_resolution.x; x++)
     {
-        for (auto x = 0; x < m_resolution.x; x++)
+        for (auto y = 0; y < m_resolution.y; y++)
         {
-            auto depth = depth_buffer[x][y] / camera.m_clip_far;
-            depth_ppm << int(255 * depth) << " " << int(255 * depth) << " " << int(255 * depth) << "\n";
+            auto idx = (y * m_resolution.x + x) * 3;
+            depth_buffer_ppm[idx] = depth_buffer_ppm[idx + 1] = depth_buffer_ppm[idx + 2] =
+                (unsigned char)(255 * depth_buffer[x][y]);
         }
     }
+
+    depth_ppm << "P6\n";
+    depth_ppm << m_resolution.x << " " << m_resolution.y << "\n255 ";
+    depth_ppm.write(depth_buffer_ppm.data(), depth_buffer_ppm.size());
 }

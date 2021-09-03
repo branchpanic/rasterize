@@ -13,27 +13,35 @@
 using namespace ssr;
 using namespace linalg::ostream_overloads;
 
-int main(int argc, char const *argv[])
+std::shared_ptr<mesh> load_sample(std::string path)
 {
-    std::ifstream obj_file("samples/suzanne.obj");
+    std::ifstream obj_file(path);
+    if (!obj_file.is_open())
+        return nullptr;
 
     const auto obj = mesh::load_obj(obj_file);
-    if (obj == nullptr)
-    {
-        std::cerr << "Failed to load obj file" << std::endl;
+    obj_file.close();
+    return obj;
+}
+
+int main()
+{
+    const auto suzanne = load_sample("samples/suzanne.obj");
+    if (suzanne == nullptr)
         return EXIT_FAILURE;
-    }
+
+    const auto cube_sphere = load_sample("samples/cube_sphere.obj");
+    if (cube_sphere == nullptr)
+        return EXIT_FAILURE;
 
     const auto unit_cube = mesh::make_cube(.5f);
 
     scene scene{camera::look_at({0, 0, 1.5f}, {0, 0, 0}, {0, 1, 0}, 90.0_deg),
                 std::vector<object>{
-                    object{obj},
-                    object{unit_cube, {1, 0, 0}, rotation_quat({0.f, .5f, .5f}, (float)45.0_deg)},
-                    object{unit_cube, {-1, 0, 0}, {0, 0, 0, 1}, {0.5, 1.5, 0.5}},
+                    object{cube_sphere, float3{0.f}, float4{0.f, 0.f, 0.f, 1.f}},
                 }};
 
-    rasterizer rasterizer(int2{1280, 720}, scene, float3{.1f, .1f, .1f});
+    rasterizer rasterizer(int2{800, 600}, scene, float3{0.f});
 
     std::ofstream out_color("out.color.ppm");
     std::ofstream out_depth("out.depth.ppm");
