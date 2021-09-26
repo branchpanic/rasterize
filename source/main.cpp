@@ -36,11 +36,14 @@ int main()
 
     const auto unit_cube = mesh::make_cube(.5f);
 
-    scene scene{camera::look_at({.2f, .2f, 2.f}, {0, 0, 0}, {0, 1, 0}, 60.0_deg), std::vector<object>{
-                                                                                      object{suzanne},
-                                                                                  }};
+    scene scene{
+        camera::look_at({.2f, .2f, 2.f}, {0, 0, 0}, {0, 1, 0}, 60.0_deg),
+        std::vector<object>{
+            object{suzanne},
+        },
+    };
 
-    rasterizer rasterizer(int2{800, 600}, scene, float3{0.f});
+    rasterizer rasterizer(int2{800, 600}, scene, float3{0.f}, true);
 
     std::ofstream out_color("out.color.ppm");
     std::ofstream out_depth("out.depth.ppm");

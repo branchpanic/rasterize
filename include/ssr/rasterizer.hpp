@@ -23,10 +23,12 @@ class rasterizer
     int2 m_resolution;
     scene m_scene;
     float3 m_background_color;
+    bool m_smooth_shading;
 
   public:
-    rasterizer(int2 resolution, scene scene, float3 background_color = {0, 0, 0})
-        : m_resolution(resolution), m_scene(scene), m_background_color(background_color)
+    rasterizer(int2 resolution, scene scene, float3 background_color = {0, 0, 0}, bool smooth_shading = false)
+        : m_resolution(resolution), m_scene(scene), m_background_color(background_color),
+          m_smooth_shading(smooth_shading)
     {
     }
 

@@ -16,6 +16,7 @@ namespace ssr
 struct mesh
 {
     std::vector<float3> m_vertices{};
+    std::vector<float3> m_vertex_normals{};
     std::vector<int3> m_indices{};
 
     mesh(std::vector<float3> vertices, std::vector<int3> indices) : m_vertices(vertices), m_indices(indices)
@@ -33,6 +34,9 @@ struct mesh
     // Perhaps we can switch to assimp or gltf or something, because improving this parser is out of scope for this
     // project
     static std::shared_ptr<mesh> load_obj(std::istream &text);
+
+  private:
+    void calculate_vertex_normals();
 };
 
 } // namespace ssr

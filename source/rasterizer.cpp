@@ -61,8 +61,6 @@ void rasterizer::render_pixmap(std::ostream &color_ppm, std::ostream &depth_ppm)
         const auto mesh = object.m_mesh;
         for (const auto &triangle : mesh->m_indices)
         {
-            const float3 color = {1., 1., 1.};
-
             float3 v0 = mesh->m_vertices[triangle[0]];
             float3 v1 = mesh->m_vertices[triangle[1]];
             float3 v2 = mesh->m_vertices[triangle[2]];
@@ -117,16 +115,21 @@ void rasterizer::render_pixmap(std::ostream &color_ppm, std::ostream &depth_ppm)
                     if (z >= depth_buffer[x][y])
                         continue;
 
-                    float3 world_normal = normalize(cross((v1 - v0), (v2 - v0)));
+                    float3 world_normal;
+                    if (m_smooth_shading)
+                    {
+                        world_normal = normalize(w0 * mesh->m_vertex_normals[triangle[0]] +
+                                                 w1 * mesh->m_vertex_normals[triangle[1]] +
+                                                 w2 * mesh->m_vertex_normals[triangle[2]]);
+                    }
+                    else
+                    {
+                        world_normal = normalize(cross((v1 - v0), (v2 - v0)));
+                    }
 
-                    // Understanding note - this is direction of *surface to light source*, not *light source to
-                    // surface*. That's why it's <0, 1, 0> and not <0, -1, 0>
-                    // https://en.wikipedia.org/wiki/Lambertian_reflectance
-                    float3 light_dir = normalize(float3{.5f, 1, .5f});
-                    float lambert = max(0, dot(world_normal, light_dir));
+                    auto light_dir = normalize(float3{.5f, 1, .5f});
+                    auto lambert = max(0, dot(world_normal, light_dir));
 
-                    // Half lambert to improve visibility
-                    // https://developer.valvesoftware.com/wiki/Half_Lambert
                     lambert = 0.5f * lambert + 0.5f;
                     lambert *= lambert;
 

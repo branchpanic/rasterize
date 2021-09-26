@@ -15,6 +15,13 @@ A simple rasterizer implemented for learning
 
 ## Gallery
 
+### Sept 26, 2021
+
+Smooth shading.
+
+![Suzanne front view with smooth shading](screenshots/09-26-21-suzanne-smooth-shading.png)
+
+
 ### Sept 3, 2021
 
 Everything so far: basic shading (hardcoded "half lambert" shader for now), OBJ loading, camera positioning, etc.
