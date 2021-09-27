@@ -6,6 +6,7 @@
 #include <memory>
 
 #include "ssr/camera.hpp"
+#include "ssr/material.hpp"
 #include "ssr/math.hpp"
 #include "ssr/mesh.hpp"
 #include "ssr/rasterizer.hpp"
@@ -26,6 +27,9 @@ std::shared_ptr<mesh> load_sample(std::string path)
 
 int main()
 {
+    const auto blue_mat = std::make_shared<lambert>(float3{0.0f, 0.0f, 1.0f});
+    const auto red_mat = std::make_shared<lambert>(float3{1.0f, 0.0f, 0.0f});
+
     const auto suzanne = load_sample("samples/suzanne.obj");
     if (suzanne == nullptr)
         return EXIT_FAILURE;
@@ -39,7 +43,8 @@ int main()
     scene scene{
         camera::look_at({.2f, .2f, 2.f}, {0, 0, 0}, {0, 1, 0}, 60.0_deg),
         std::vector<object>{
-            object{suzanne},
+            object{cube_sphere, blue_mat, {-.6f, 0.0f, 0.0f}},
+            object{suzanne, red_mat, {.6f, 0.0f, 0.0f}},
         },
     };
 

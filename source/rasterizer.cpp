@@ -5,7 +5,7 @@
 #include <iostream>
 #include <random>
 
-#include "linalg.h"
+#include "ssr/material.hpp"
 #include "ssr/math.hpp"
 
 using namespace ssr;
@@ -115,26 +115,25 @@ void rasterizer::render_pixmap(std::ostream &color_ppm, std::ostream &depth_ppm)
                     if (z >= depth_buffer[x][y])
                         continue;
 
-                    float3 world_normal;
-                    if (m_smooth_shading)
-                    {
-                        world_normal = normalize(w0 * mesh->m_vertex_normals[triangle[0]] +
-                                                 w1 * mesh->m_vertex_normals[triangle[1]] +
-                                                 w2 * mesh->m_vertex_normals[triangle[2]]);
-                    }
-                    else
-                    {
-                        world_normal = normalize(cross((v1 - v0), (v2 - v0)));
-                    }
+                    auto material = object.m_material;
+                    float3 color = {1.0f, 0.0f, 1.0f};
 
-                    auto light_dir = normalize(float3{.5f, 1, .5f});
-                    auto lambert = max(0, dot(world_normal, light_dir));
-
-                    lambert = 0.5f * lambert + 0.5f;
-                    lambert *= lambert;
+                    if (material != nullptr)
+                    {
+                        shading_params sp{.barycentric_coords = {w0, w1, w2},
+                                          .face_normal = normalize(cross((v1 - v0), (v2 - v0))),
+                                          .vertex_normals =
+                                              {
+                                                  mesh->m_vertex_normals[triangle[0]],
+                                                  mesh->m_vertex_normals[triangle[1]],
+                                                  mesh->m_vertex_normals[triangle[2]],
+                                              },
+                                          .light_orientation = normalize(float3{0.5f, 1.0f, 0.5f})};
+                        color = material->shade(sp);
+                    }
 
                     depth_buffer[x][y] = z;
-                    image_buffer[x][y] = {lambert, lambert, lambert};
+                    image_buffer[x][y] = color;
                 }
             }
         }

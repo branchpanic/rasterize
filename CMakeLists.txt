@@ -14,6 +14,7 @@ add_executable(
 	source/mesh.cpp
 	source/camera.cpp
 	source/object.cpp
+	source/material.cpp
 )
 
 add_custom_command(
